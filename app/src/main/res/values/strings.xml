@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">AndroidCamera</string>
+    <string name="system_camera">调用系统相机</string>
+    <string name="custom_camera">自定义照相机</string>
 </resources>
