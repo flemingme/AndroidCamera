@@ -8,6 +8,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.text.TextUtils;
 import android.text.format.DateFormat;
 import android.view.View;
 import android.widget.Button;
@@ -33,6 +34,8 @@ public class MainActivity extends BaseActivity {
     @BindView(R.id.imageView)
     ImageView imageView;
     private String filePath;
+    private static final int REQUEST_SYSTEM_CAMERA = 100;
+    private static final int REQUEST_CUSTOM_CAMERA = 101;
 
     @Override
     protected int addLayout() {
@@ -60,45 +63,66 @@ public class MainActivity extends BaseActivity {
 
     private void takePictureBySys() {
 
+//        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+//        startActivityForResult(intent, REQUEST_SYSTEM_CAMERA);
+
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 
         String fileName = DateFormat.format("yyyyMMdd_HHmmss", Calendar.getInstance(Locale.CHINA)) + ".jpg";
-
         filePath = Environment.getExternalStorageDirectory().getPath() + File.separator + fileName;
-
         Uri photoUri = Uri.fromFile(new File(filePath));
-        intent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
 
-        startActivityForResult(intent, 0);
+        intent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
+        startActivityForResult(intent, REQUEST_SYSTEM_CAMERA);
     }
 
     private void takePictureByCus() {
-        startActivity(new Intent(this, CustomCameraActivity.class));
+        startActivityForResult(new Intent(this, CustomCameraActivity.class), REQUEST_CUSTOM_CAMERA);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode == RESULT_OK) {
-            if (requestCode == 0) {
+            switch (requestCode) {
+                case REQUEST_SYSTEM_CAMERA:
+                    // 直接获取data内容，不过是编码过的图片，不清晰
 //                Bundle extras = data.getExtras();
 //                Bitmap bitmap = (Bitmap) extras.get("data");
 //                imageView.setImageBitmap(bitmap);
-                FileInputStream fis = null;
-                try {
-                    fis = new FileInputStream(filePath);
-                    Bitmap bitmap = BitmapFactory.decodeStream(fis);
-                    imageView.setImageBitmap(bitmap);
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                } finally {
-                    try {
-                        if (fis != null) {
-                            fis.close();
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
+
+                    // 通过文件的方式获取拍照后的照片，清晰
+                    displayImage(filePath);
+                    break;
+                case REQUEST_CUSTOM_CAMERA:
+                    String path = data.getStringExtra("path");
+                    if (!TextUtils.isEmpty(path)) {
+                        displayImage(path);
                     }
+                    break;
+            }
+        }
+    }
+
+    private void displayImage(String path) {
+        FileInputStream fis = null;
+        Bitmap bitmap = null;
+        try {
+            fis = new FileInputStream(path);
+            bitmap = BitmapFactory.decodeStream(fis);
+            imageView.setImageBitmap(bitmap);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                if (fis != null) {
+                    fis.close();
                 }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            if (bitmap != null) {
+                bitmap.recycle();
             }
         }
     }
