@@ -105,10 +105,9 @@ public class MainActivity extends BaseActivity {
 
     private void displayImage(String path) {
         FileInputStream fis = null;
-        Bitmap bitmap = null;
         try {
             fis = new FileInputStream(path);
-            bitmap = BitmapFactory.decodeStream(fis);
+            Bitmap bitmap = BitmapFactory.decodeStream(fis);
             imageView.setImageBitmap(bitmap);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -119,10 +118,6 @@ public class MainActivity extends BaseActivity {
                 }
             } catch (IOException e) {
                 e.printStackTrace();
-            }
-
-            if (bitmap != null) {
-                bitmap.recycle();
             }
         }
     }

@@ -21,6 +21,8 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
+import static android.hardware.Camera.open;
+
 public class CustomCameraActivity extends AppCompatActivity implements GestureDetectManager.OnCameraChangeListener {
 
     @BindView(R.id.surfaceView)
@@ -28,43 +30,33 @@ public class CustomCameraActivity extends AppCompatActivity implements GestureDe
     @BindView(R.id.bt_camera)
     Button btCamera;
     private static final String TAG = "fleming";
-    private Camera mCamera;
     private GestureDetectorCompat mDetector;
     private static float FLIP_DISTANCE = 120;
     private Activity mActivity;
-    private SurfaceHolder mHolder;
     private int cameraPosition = 1;
     private Camera currentCamera;
+    private SurfaceHolder mHolder;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_custom_camera);
         ButterKnife.bind(this);
-
         mActivity = this;
-
-        initCamera();
 
         mHolder = surfaceView.getHolder();
         mHolder.addCallback(callback);
 
         mDetector = new GestureDetectorCompat(this, onGestureListener);
-
         mDetector.setOnDoubleTapListener(new MyDoubleTapListener());
-
         GestureDetectManager.getInstance(this).setCameraChangeListener(this);
-    }
-
-    private void initCamera() {
-        currentCamera = Camera.open();
-        startPreview();
     }
 
     private SurfaceHolder.Callback callback = new SurfaceHolder.Callback() {
         @Override
         public void surfaceCreated(SurfaceHolder holder) {
-            startPreview();
+            currentCamera = Camera.open(0);
+            startPreview(currentCamera, holder);
         }
 
         @Override
@@ -78,62 +70,55 @@ public class CustomCameraActivity extends AppCompatActivity implements GestureDe
         }
     };
 
+    private void stopPreview() {
+        if (currentCamera != null) {
+            currentCamera.setPreviewCallback(null);
+            currentCamera.stopPreview();
+            currentCamera.release();
+        }
+    }
+
+    private void startPreview(Camera camera, SurfaceHolder holder) {
+        try {
+            camera.setPreviewDisplay(holder);
+            camera.setDisplayOrientation(90);
+            camera.startPreview();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
     @OnClick(R.id.bt_camera)
     public void onViewClicked() {
-        currentCamera.autoFocus(new Camera.AutoFocusCallback() {
-            @Override
-            public void onAutoFocus(boolean success, Camera camera) {
-                if (success) {
-                    takePicture(camera);
-                }
-            }
-        });
+        currentCamera.takePicture(null, null, pictureCallback);
+//        currentCamera.autoFocus(new Camera.AutoFocusCallback() {
+//            @Override
+//            public void onAutoFocus(boolean success, Camera camera) {
+//                if (success) {
+//
+//                }
+//            }
+//        });
     }
 
-    private void takePicture(Camera camera) {
-        camera.takePicture(null, null, new Camera.PictureCallback() {
-            @Override
-            public void onPictureTaken(byte[] data, Camera camera) {
-                try {
-                    File file = File.createTempFile("img", "");
-                    FileOutputStream fos = new FileOutputStream(file);
-                    fos.write(data);
-                    fos.flush();
-                    fos.close();
-                    back(file);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-    }
-
-    private void back(File file) {
-        Intent intent = new Intent(this, MainActivity.class);
-        intent.putExtra("path", file.getAbsolutePath());
-        setResult(RESULT_OK, intent);
-        finish();
-    }
-
-    private void startPreview() {
-        if (currentCamera != null) {
+    private Camera.PictureCallback pictureCallback = new Camera.PictureCallback() {
+        @Override
+        public void onPictureTaken(byte[] data, Camera camera) {
             try {
-                currentCamera.setPreviewDisplay(mHolder);//通过surfaceview显示取景画面
-                currentCamera.setDisplayOrientation(90);
+                File file = File.createTempFile("img", "");
+                FileOutputStream fos = new FileOutputStream(file);
+                fos.write(data);
+                fos.flush();
+                fos.close();
+                Intent intent = new Intent(mActivity, MainActivity.class);
+                intent.putExtra("path", file.getAbsolutePath());
+                setResult(RESULT_OK, intent);
+                finish();
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            currentCamera.startPreview();
         }
-    }
-
-    private void stopPreview() {
-        if (currentCamera != null) {
-            currentCamera.stopPreview();
-            currentCamera.release();
-            currentCamera = null;
-        }
-    }
+    };
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
@@ -179,8 +164,8 @@ public class CustomCameraActivity extends AppCompatActivity implements GestureDe
                 //现在是后置，变更为前置
                 if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {//代表摄像头的方位，CAMERA_FACING_FRONT前置      CAMERA_FACING_BACK后置
                     stopPreview();
-                    currentCamera = Camera.open(i);//打开当前选中的摄像头
-                    startPreview();
+                    currentCamera = open(i);//打开当前选中的摄像头
+                    startPreview(currentCamera, mHolder);
                     cameraPosition = 0;
                     break;
                 }
@@ -188,8 +173,8 @@ public class CustomCameraActivity extends AppCompatActivity implements GestureDe
                 //现在是前置， 变更为后置
                 if (cameraInfo.facing == Camera.CameraInfo.CAMERA_FACING_BACK) {//代表摄像头的方位，CAMERA_FACING_FRONT前置      CAMERA_FACING_BACK后置
                     stopPreview();
-                    mCamera = Camera.open(i);//打开当前选中的摄像头
-                    startPreview();
+                    currentCamera = open(i);//打开当前选中的摄像头
+                    startPreview(currentCamera, mHolder);
                     cameraPosition = 1;
                     break;
                 }

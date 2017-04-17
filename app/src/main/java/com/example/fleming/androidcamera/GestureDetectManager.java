@@ -69,9 +69,9 @@ public class GestureDetectManager {
     }
 
     private void toggleCamera() {
-//        if (listener != null) {
-//            listener.onChange();
-//        }
+        if (listener != null) {
+            listener.onChange();
+        }
     }
 
     private OnCameraChangeListener listener;
