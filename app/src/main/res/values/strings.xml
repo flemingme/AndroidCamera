@@ -3,4 +3,9 @@
     <string name="system_camera">调用系统相机</string>
     <string name="custom_camera">自定义照相机</string>
     <string name="take_photo">拍照</string>
+    <string name="take_video">视频</string>
+    <string-array name="mode">
+        <item>@string/take_photo</item>
+        <item>@string/take_video</item>
+    </string-array>
 </resources>

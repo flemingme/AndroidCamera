@@ -2,6 +2,7 @@ package com.example.fleming.androidcamera;
 
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.provider.MediaStore;
 import android.provider.Settings;
 
@@ -56,8 +57,9 @@ public class GestureDetectManager {
     }
 
     private void openModeSetting() {
-//        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-//        sContext.startActivity(intent);
+        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+        intent.setData(Uri.parse("package:"+ sContext.getPackageName()));
+        sContext.startActivity(intent);
     }
 
     /**

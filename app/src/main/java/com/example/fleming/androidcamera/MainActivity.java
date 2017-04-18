@@ -1,6 +1,7 @@
 package com.example.fleming.androidcamera;
 
 import android.Manifest;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -8,11 +9,13 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.support.v7.app.AlertDialog;
 import android.text.TextUtils;
 import android.text.format.DateFormat;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.VideoView;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -33,9 +36,12 @@ public class MainActivity extends BaseActivity {
     Button btCustomCamera;
     @BindView(R.id.imageView)
     ImageView imageView;
+    @BindView(R.id.video_view)
+    VideoView videoView;
     private String filePath;
-    private static final int REQUEST_SYSTEM_CAMERA = 100;
-    private static final int REQUEST_CUSTOM_CAMERA = 101;
+    private static final int REQUEST_IMAGE_CAPTURE = 100;
+    private static final int REQUEST_VIDEO_CAPTURE = 101;
+    private static final int REQUEST_CUSTOM_CAMERA = 102;
 
     @Override
     protected int addLayout() {
@@ -53,47 +59,74 @@ public class MainActivity extends BaseActivity {
     public void onViewClicked(View view) {
         switch (view.getId()) {
             case R.id.bt_system_camera:
-                takePictureBySys();
+                displayDialog();
                 break;
             case R.id.bt_custom_camera:
-                takePictureByCus();
+                startActivityForResult(new Intent(this, CustomCameraActivity.class), REQUEST_CUSTOM_CAMERA);
                 break;
         }
     }
 
-    private void takePictureBySys() {
-
-//        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-//        startActivityForResult(intent, REQUEST_SYSTEM_CAMERA);
-
-        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-
-        String fileName = DateFormat.format("yyyyMMdd_HHmmss", Calendar.getInstance(Locale.CHINA)) + ".jpg";
-        filePath = Environment.getExternalStorageDirectory().getPath() + File.separator + fileName;
-        Uri photoUri = Uri.fromFile(new File(filePath));
-
-        intent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
-        startActivityForResult(intent, REQUEST_SYSTEM_CAMERA);
+    private void displayDialog() {
+        new AlertDialog.Builder(this)
+                .setItems(getResources().getStringArray(R.array.mode),
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                switch (which) {
+                                    case 0:
+                                        dispatchTakePictureIntent();
+                                        break;
+                                    case 1:
+                                        dispatchTakeVideoIntent();
+                                        break;
+                                }
+                            }
+                        })
+                .show();
     }
 
-    private void takePictureByCus() {
-        startActivityForResult(new Intent(this, CustomCameraActivity.class), REQUEST_CUSTOM_CAMERA);
+    private void dispatchTakePictureIntent() {
+        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+            String fileName = DateFormat.format("yyyyMMdd_HHmmss", Calendar.getInstance(Locale.CHINA)) + ".jpg";
+            filePath = Environment.getExternalStorageDirectory().getPath() + File.separator + fileName;
+            Uri photoUri = Uri.fromFile(new File(filePath));
+
+            takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
+            startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+        }
+    }
+
+    private void dispatchTakeVideoIntent() {
+        Intent takeVideoIntent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
+        if (takeVideoIntent.resolveActivity(getPackageManager()) != null) {
+            startActivityForResult(takeVideoIntent, REQUEST_VIDEO_CAPTURE);
+        }
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode == RESULT_OK) {
             switch (requestCode) {
-                case REQUEST_SYSTEM_CAMERA:
-                    // 直接获取data内容，不过是编码过的图片，不清晰
+                case REQUEST_IMAGE_CAPTURE:
+                    // 获取缩略图
 //                Bundle extras = data.getExtras();
 //                Bitmap bitmap = (Bitmap) extras.get("data");
 //                imageView.setImageBitmap(bitmap);
 
-                    // 通过文件的方式获取拍照后的照片，清晰
+                    // 保存全尺寸图片
+                    showImageView();
                     displayImage(filePath);
                     break;
+                case REQUEST_VIDEO_CAPTURE:
+                    showVideoView(View.VISIBLE, View.GONE);
+                    Uri videoUri = data.getData();
+                    videoView.setVideoURI(videoUri);
+                    videoView.start();
+                    break;
                 case REQUEST_CUSTOM_CAMERA:
+                    showImageView();
                     String path = data.getStringExtra("path");
                     if (!TextUtils.isEmpty(path)) {
                         displayImage(path);
@@ -101,6 +134,15 @@ public class MainActivity extends BaseActivity {
                     break;
             }
         }
+    }
+
+    private void showVideoView(int visible, int gone) {
+        videoView.setVisibility(visible);
+        imageView.setVisibility(gone);
+    }
+
+    private void showImageView() {
+        showVideoView(View.GONE, View.VISIBLE);
     }
 
     private void displayImage(String path) {
