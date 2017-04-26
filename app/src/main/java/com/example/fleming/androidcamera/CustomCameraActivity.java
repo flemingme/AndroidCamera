@@ -11,7 +11,11 @@ import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.widget.Button;
+import android.view.View;
+import android.widget.ImageButton;
+
+import com.example.fleming.androidcamera.lib.Gesture;
+import com.example.fleming.androidcamera.lib.GestureDetectManager;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -25,11 +29,17 @@ import static android.hardware.Camera.open;
 
 public class CustomCameraActivity extends AppCompatActivity implements GestureDetectManager.OnCameraChangeListener {
 
+    private static final String TAG = "fleming";
     @BindView(R.id.surfaceView)
     SurfaceView surfaceView;
-    @BindView(R.id.bt_camera)
-    Button btCamera;
-    private static final String TAG = "fleming";
+    @BindView(R.id.capturePhoto)
+    ImageButton capturePhoto;
+    @BindView(R.id.captureVideo)
+    ImageButton captureVideo;
+    @BindView(R.id.toggleFlash)
+    ImageButton toggleFlash;
+    @BindView(R.id.toggleCamera)
+    ImageButton toggleCamera;
     private GestureDetectorCompat mDetector;
     private static float FLIP_DISTANCE = 120;
     private Activity mActivity;
@@ -86,19 +96,6 @@ public class CustomCameraActivity extends AppCompatActivity implements GestureDe
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    @OnClick(R.id.bt_camera)
-    public void onViewClicked() {
-        currentCamera.takePicture(null, null, pictureCallback);
-//        currentCamera.autoFocus(new Camera.AutoFocusCallback() {
-//            @Override
-//            public void onAutoFocus(boolean success, Camera camera) {
-//                if (success) {
-//
-//                }
-//            }
-//        });
     }
 
     private Camera.PictureCallback pictureCallback = new Camera.PictureCallback() {
@@ -179,6 +176,21 @@ public class CustomCameraActivity extends AppCompatActivity implements GestureDe
                     break;
                 }
             }
+        }
+    }
+
+    @OnClick({R.id.capturePhoto, R.id.captureVideo, R.id.toggleFlash, R.id.toggleCamera})
+    public void onViewClicked(View view) {
+        switch (view.getId()) {
+            case R.id.capturePhoto:
+                currentCamera.takePicture(null, null, pictureCallback);
+                break;
+            case R.id.captureVideo:
+                break;
+            case R.id.toggleFlash:
+                break;
+            case R.id.toggleCamera:
+                break;
         }
     }
 

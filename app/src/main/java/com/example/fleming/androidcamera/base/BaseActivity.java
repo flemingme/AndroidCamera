@@ -1,4 +1,4 @@
-package com.example.fleming.androidcamera;
+package com.example.fleming.androidcamera.base;
 
 import android.content.DialogInterface;
 import android.content.Intent;

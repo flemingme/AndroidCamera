@@ -12,10 +12,15 @@ import android.provider.MediaStore;
 import android.support.v7.app.AlertDialog;
 import android.text.TextUtils;
 import android.text.format.DateFormat;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.VideoView;
+
+import com.example.fleming.androidcamera.base.BaseActivity;
+import com.example.fleming.androidcamera.util.PictureUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -26,14 +31,9 @@ import java.util.Locale;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import butterknife.OnClick;
 
 public class MainActivity extends BaseActivity {
 
-    @BindView(R.id.bt_system_camera)
-    Button btSystemCamera;
-    @BindView(R.id.bt_custom_camera)
-    Button btCustomCamera;
     @BindView(R.id.imageView)
     ImageView imageView;
     @BindView(R.id.video_view)
@@ -55,16 +55,24 @@ public class MainActivity extends BaseActivity {
         checkPermissions(Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE);
     }
 
-    @OnClick({R.id.bt_system_camera, R.id.bt_custom_camera})
-    public void onViewClicked(View view) {
-        switch (view.getId()) {
-            case R.id.bt_system_camera:
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int itemId = item.getItemId();
+        switch (itemId) {
+            case R.id.system_camera:
                 displayDialog();
-                break;
-            case R.id.bt_custom_camera:
+                return true;
+            case R.id.custom_camera:
                 startActivityForResult(new Intent(this, CustomCameraActivity.class), REQUEST_CUSTOM_CAMERA);
-                break;
+                return true;
         }
+        return super.onOptionsItemSelected(item);
     }
 
     private void displayDialog() {
@@ -117,7 +125,13 @@ public class MainActivity extends BaseActivity {
 
                     // 保存全尺寸图片
                     showImageView();
-                    displayImage(filePath);
+                    try {
+                        FileInputStream fis = new FileInputStream(new File(filePath));
+                        Bitmap bitmap = BitmapFactory.decodeStream(fis);
+                        imageView.setImageBitmap(bitmap);
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
                     break;
                 case REQUEST_VIDEO_CAPTURE:
                     showVideoView(View.VISIBLE, View.GONE);
@@ -128,9 +142,7 @@ public class MainActivity extends BaseActivity {
                 case REQUEST_CUSTOM_CAMERA:
                     showImageView();
                     String path = data.getStringExtra("path");
-                    if (!TextUtils.isEmpty(path)) {
-                        displayImage(path);
-                    }
+                    displayImage(path);
                     break;
             }
         }
@@ -146,11 +158,34 @@ public class MainActivity extends BaseActivity {
     }
 
     private void displayImage(String path) {
+        if (TextUtils.isEmpty(path)) {
+            return;
+        }
+
         FileInputStream fis = null;
         try {
             fis = new FileInputStream(path);
             Bitmap bitmap = BitmapFactory.decodeStream(fis);
-            imageView.setImageBitmap(bitmap);
+
+            int degree = PictureUtils.getBitmapDegree(path);
+            Log.d("fleming", "displayImage: degree=" + degree);
+
+            Bitmap bitmap1 = null;
+            switch (degree) {
+                case 0:
+                    bitmap1 = PictureUtils.rotateBitmapByDegree(bitmap, 90);
+                    break;
+                case 90:
+//                    bitmap1 = PictureUtils.rotateBitmapByDegree(bitmap, -90);
+                    break;
+                case 180:
+//                    bitmap1 = PictureUtils.rotateBitmapByDegree(bitmap, 180);
+                    break;
+                case 270:
+//                    bitmap1 = PictureUtils.rotateBitmapByDegree(bitmap, 90);
+                    break;
+            }
+            imageView.setImageBitmap(bitmap1);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } finally {
