@@ -1,4 +1,4 @@
-package com.example.fleming.androidcamera;
+package com.example.fleming.androidcamera.ui;
 
 import android.Manifest;
 import android.content.DialogInterface;
@@ -9,9 +9,9 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.support.v4.content.FileProvider;
 import android.support.v7.app.AlertDialog;
 import android.text.TextUtils;
-import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -19,6 +19,7 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.VideoView;
 
+import com.example.fleming.androidcamera.R;
 import com.example.fleming.androidcamera.base.BaseActivity;
 import com.example.fleming.androidcamera.util.PictureUtils;
 
@@ -26,7 +27,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Calendar;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Locale;
 
 import butterknife.BindView;
@@ -38,7 +40,7 @@ public class MainActivity extends BaseActivity {
     ImageView imageView;
     @BindView(R.id.video_view)
     VideoView videoView;
-    private String filePath;
+    private String mCurrentPhotoPath;
     private static final int REQUEST_IMAGE_CAPTURE = 100;
     private static final int REQUEST_VIDEO_CAPTURE = 101;
     private static final int REQUEST_CUSTOM_CAMERA = 102;
@@ -94,18 +96,33 @@ public class MainActivity extends BaseActivity {
                 .show();
     }
 
+    // 调用系统相机拍照
     private void dispatchTakePictureIntent() {
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
-            String fileName = DateFormat.format("yyyyMMdd_HHmmss", Calendar.getInstance(Locale.CHINA)) + ".jpg";
-            filePath = Environment.getExternalStorageDirectory().getPath() + File.separator + fileName;
-            Uri photoUri = Uri.fromFile(new File(filePath));
-
+            File photoFile = createImageFile();
+            Uri photoUri = FileProvider
+                    .getUriForFile(this, this.getPackageName() + ".fileprovider", photoFile);
             takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
             startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
         }
     }
 
+    private File createImageFile() {
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.CHINESE).format(new Date());
+        String imageFileName = "JPEG_" + timeStamp + "_";
+        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        File image = null;
+        try {
+            image = File.createTempFile(imageFileName, ".jpg", storageDir);
+            mCurrentPhotoPath = image.getAbsolutePath();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return image;
+    }
+
+    // 调用系统相机拍视频
     private void dispatchTakeVideoIntent() {
         Intent takeVideoIntent = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
         if (takeVideoIntent.resolveActivity(getPackageManager()) != null) {
@@ -119,14 +136,14 @@ public class MainActivity extends BaseActivity {
             switch (requestCode) {
                 case REQUEST_IMAGE_CAPTURE:
                     // 获取缩略图
-//                Bundle extras = data.getExtras();
-//                Bitmap bitmap = (Bitmap) extras.get("data");
-//                imageView.setImageBitmap(bitmap);
+                    /*Bundle extras = data.getExtras();
+                    Bitmap bitmap = (Bitmap) extras.get("data");
+                    imageView.setImageBitmap(bitmap);*/
 
                     // 保存全尺寸图片
                     showImageView();
                     try {
-                        FileInputStream fis = new FileInputStream(new File(filePath));
+                        FileInputStream fis = new FileInputStream(new File(mCurrentPhotoPath));
                         Bitmap bitmap = BitmapFactory.decodeStream(fis);
                         imageView.setImageBitmap(bitmap);
                     } catch (FileNotFoundException e) {
@@ -148,13 +165,13 @@ public class MainActivity extends BaseActivity {
         }
     }
 
+    private void showImageView() {
+        showVideoView(View.GONE, View.VISIBLE);
+    }
+
     private void showVideoView(int visible, int gone) {
         videoView.setVisibility(visible);
         imageView.setVisibility(gone);
-    }
-
-    private void showImageView() {
-        showVideoView(View.GONE, View.VISIBLE);
     }
 
     private void displayImage(String path) {

@@ -15,7 +15,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:padding="16dp"
-        android:weightSum="3">
+        android:weightSum="4">
 
         <ImageButton
             android:id="@+id/capturePhoto"
@@ -35,8 +35,7 @@
             android:layout_weight="1"
             android:backgroundTint="@color/colorPrimary"
             android:src="@drawable/ic_video"
-            android:tint="@android:color/white"
-            android:visibility="gone" />
+            android:tint="@android:color/white" />
 
         <ImageButton
             android:id="@+id/toggleFlash"

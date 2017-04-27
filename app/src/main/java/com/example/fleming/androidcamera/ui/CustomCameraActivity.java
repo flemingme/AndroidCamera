@@ -1,4 +1,4 @@
-package com.example.fleming.androidcamera;
+package com.example.fleming.androidcamera.ui;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -14,8 +14,9 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.widget.ImageButton;
 
-import com.example.fleming.androidcamera.lib.Gesture;
-import com.example.fleming.androidcamera.lib.GestureDetectManager;
+import com.example.fleming.androidcamera.R;
+import com.example.fleming.androidcamera.manager.Gesture;
+import com.example.fleming.androidcamera.manager.GestureDetectManager;
 
 import java.io.File;
 import java.io.FileOutputStream;
