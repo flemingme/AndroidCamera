@@ -16,7 +16,7 @@ public class GestureDetectManager {
     private static GestureDetectManager sManager;
     private static Context sContext;
 
-    public GestureDetectManager(Context context) {
+    private GestureDetectManager(Context context) {
         sContext = context;
     }
 

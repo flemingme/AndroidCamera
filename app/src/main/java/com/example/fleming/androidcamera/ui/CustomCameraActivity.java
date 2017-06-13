@@ -120,8 +120,7 @@ public class CustomCameraActivity extends AppCompatActivity implements GestureDe
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        mDetector.onTouchEvent(event);
-        return super.onTouchEvent(event);
+        return mDetector.onTouchEvent(event);
     }
 
     private GestureDetector.OnGestureListener onGestureListener = new GestureDetector.SimpleOnGestureListener() {
